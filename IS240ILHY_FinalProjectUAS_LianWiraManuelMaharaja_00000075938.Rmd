@@ -1,0 +1,218 @@
+---
+title: "Final Project"
+author: ""
+date: "6/1/2023"
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(OutDec = ",")
+library(readxl)
+```
+
+## Perintahnya
+-- Explain the dataset and variables that you will be using in your analysis
+-- State the null hypothesis (H0) and alternative hypothesis (Ha) for your study
+-- conduct a one-way ANOVA, TURKEY HSD, and Turkey-Kramer procedure on both the primary and secondary data
+-- conduct a pearson or Spearman correlation test on both the primary and secondary data
+-- conduct a Wilcoxon or Mann-Whitney test on both the primary and secondary data
+-- conduct a Chi-square Goodness of fit test on both the primary and secondary data
+-- explain the conclussion from the results of the analysis.
+## 
+
+## pertamatama yang harus dilakukan melakukan uji wilcox untuk mengetahui mana data dari tahun 2018 atau 2019 yang terbaik yang diggunakan dalam penelitian selanjutnya
+
+
+```{r pressure, echo=FALSE}
+#a----------
+#panggil library yang diperlukan
+library(readxl)
+Sheet1 <- read_excel("datauas.xlsx", sheet = "Sheet1")
+
+#Ubah tipe data
+Sheet1$'Pendidikan Tertinggi yang Ditamatkan' <- as.factor(Sheet1$'Pendidikan Tertinggi yang Ditamatkan')
+Sheet1$pengangguran2018 <- as.numeric(Sheet1$pengangguran2018)
+Sheet1$pengangguran2019 <- as.numeric(Sheet1$pengangguran2019)
+Sheet1$bekerja2018 <- as.numeric(Sheet1$bekerja2018)
+Sheet1$bekerja2019 <- as.numeric(Sheet1$bekerja2019)
+
+
+str(Sheet1)
+
+
+#b----------
+
+#H0: skor 2018 <= skor 2019 (isi dengan =, <= atau >=)
+#Ha: skor 2018 >= skor 2019 (isi dengan tidak sama dgn, < atau >)
+
+
+
+#Hasil uji hipotesa(untuk membandingkan mana data yang terbaik 2018 atau 2019):
+(wt <- wilcox.test(Sheet1$bekerja2018, Sheet1$bekerja2019, paired = TRUE, conf.level = 0.95))
+(wt <- wilcox.test(Sheet1$pengangguran2018, Sheet1$pengangguran2019, paired = TRUE, conf.level = 0.95))
+
+
+#Kesimpulan: 2019 datanya lebih baik 
+```
+
+## setelah itu kita mencari tau koefisien korelasi dari data itu
+   
+```{r pressure, echo=FALSE}
+library(car) 
+library(lmtest)
+library(dplyr)
+pengangguran1 <- Sheet1 %>% filter
+#summary data
+summary(pengangguran1)
+
+#scatter plot
+# Konversi variabel "Pendidikan Tertinggi yang Ditamatkan" ke numerik
+pengangguran1$Pendidikan_Numeric <- as.numeric(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan")
+# Scatter plot dan regresi untuk variabel "bekerja2019"
+plot(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan", pengangguran1$bekerja2019)
+abline(lm(pengangguran1$bekerja2019 ~ pengangguran1$"Pendidikan Tertinggi yang Ditamatkan"), col = "red")
+
+# Scatter plot dan regresi untuk variabel "pengangguran2019"
+plot(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan", pengangguran1$pengangguran2019)
+abline(lm(pengangguran1$pengangguran2019 ~ pengangguran1$"Pendidikan Tertinggi yang Ditamatkan"), col = "red")
+
+# Menghitung koefisien korelasi untuk variabel "bekerja2019"
+cor_bekerja2019 <- cor(pengangguran1$Pendidikan_Numeric, pengangguran1$bekerja2019)
+cat("Koefisien korelasi untuk bekerja2019:", cor_bekerja2019, "\n")
+# Menghitung koefisien korelasi untuk variabel "pengangguran2019"
+cor_pengangguran2019 <- cor(pengangguran1$Pendidikan_Numeric, pengangguran1$pengangguran2019)
+cat("Koefisien korelasi untuk pengangguran2019:", cor_pengangguran2019)
+```
+## setelah itu 
+##melakukan uji ANOVA, TURKEY HSD, and Turkey-Kramer 
+```{r pressure, echo=FALSE}
+library(agricolae)
+#a-----------
+Sheet2 <- read_excel("datauas.xlsx", sheet = "Sheet2")
+head(Sheet2)
+
+#b-------------
+(groupmeans <- apply(Sheet2, 2, mean))
+s.Sheet2 <- stack(Sheet2)
+(grandmean <- mean(s.Sheet2$values, na.rm = TRUE))
+groupmeans - grandmean
+
+boxplot(values ~ ind, data = s.Sheet2)
+points(groupmeans, col = "blue", pch = 17)
+abline(h = grandmean, col = "red")
+
+#c------------
+apply(Sheet2, 2, shapiro.test)
+car::leveneTest(values ~ ind, data = s.Sheet2)
+
+#d------------
+results <- aov(values ~ ind, data = s.Sheet2)
+summary(results)
+
+#e---------------
+tk <- TukeyHSD(results, conf.level = 0.95)
+tk
+plot(tk)
+
+tkk <- HSD.test(results, "ind", group = TRUE, console = FALSE)
+tkk
+
+```
+
+
+## setelah itu 
+## melakukan analisis regresi:
+```{r pressure, echo=FALSE}
+library(car) 
+library(lmtest)
+library(dplyr)
+pengangguran1 <- Sheet1 %>% filter
+#summary data
+summary(pengangguran1)
+
+#scatter plot
+# Konversi variabel "Pendidikan Tertinggi yang Ditamatkan" ke numerik
+pengangguran1$Pendidikan_Numeric <- as.numeric(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan")
+# Scatter plot dan regresi untuk variabel "bekerja2019"
+plot(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan", pengangguran1$bekerja2019)
+abline(lm(pengangguran1$bekerja2019 ~ pengangguran1$"Pendidikan Tertinggi yang Ditamatkan"), col = "red")
+
+# Scatter plot dan regresi untuk variabel "pengangguran2019"
+plot(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan", pengangguran1$pengangguran2019)
+abline(lm(pengangguran1$pengangguran2019 ~ pengangguran1$"Pendidikan Tertinggi yang Ditamatkan"), col = "red")
+
+# Menghitung koefisien korelasi untuk variabel "bekerja2019"
+cor_bekerja2019 <- cor(pengangguran1$Pendidikan_Numeric, pengangguran1$bekerja2019)
+cat("Koefisien korelasi untuk bekerja2019:", cor_bekerja2019, "\n")
+# Menghitung koefisien korelasi untuk variabel "pengangguran2019"
+cor_pengangguran2019 <- cor(pengangguran1$Pendidikan_Numeric, pengangguran1$pengangguran2019)
+cat("Koefisien korelasi untuk pengangguran2019:", cor_pengangguran2019)
+
+# Mengubah variabel menjadi numerik
+pengangguran1$"Pendidikan Tertinggi yang Ditamatkan" <- as.numeric(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan")
+pengangguran1$pengangguran2019 <- as.numeric(pengangguran1$pengangguran2019)
+
+# Fit model regresi
+fit <- lm(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan" ~ pengangguran1$pengangguran2019, data = pengangguran1)
+# Menampilkan summary model
+summary(fit)
+
+# f. Fit model regresi
+fit <- lm(pengangguran1$"Pendidikan Tertinggi yang Ditamatkan" ~ bekerja2019, data = pengangguran1)
+summary(fit)
+
+# g. Cek asumsi
+par(mfrow = c(2,2))
+plot(fit)
+par(mfrow = c(1,1))
+
+# uji otokorelasi
+dwtest_result <- lmtest::dwtest(fit)
+print(dwtest_result)
+
+# uji homoskedastisitas
+bptest_result <- lmtest::bptest(fit)
+print(bptest_result)
+
+# uji normalitas
+shapiro_test_result <- shapiro.test(fit$residuals)
+print(shapiro_test_result)
+
+# h. Prediksi
+pengangguran1 <- data.frame(pengangguran1 = c(25000, 50000))
+predict_result <- predict(fit, bekerja2019 = pengangguran1, interval = "confidence", conf.level = 0.95)
+print(predict_result)
+predict_result <- predict(fit, pengangguran2019 = pengangguran1, interval = "prediction", conf.level = 0.95)
+print(predict_result)
+```
+## setelah itu 
+## melakukan analisis CHi Square:
+```{r pressure, echo=FALSE}
+# Membaca data dari file Excel
+library(readxl)
+data <- read_excel("datauas.xlsx", sheet = "Sheet1")
+
+# Membuat tabel silang antara variabel "Pendidikan Tertinggi yang Ditamatkan" dan "Jumlah Pengangguran"
+contingency_table <- table(data$`Pendidikan Tertinggi yang Ditamatkan`, data$pengangguran2019)
+
+# Melakukan uji Chi-square
+chi_sq_result <- chisq.test(contingency_table)
+
+# Menampilkan hasil uji
+print(chi_sq_result)
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
